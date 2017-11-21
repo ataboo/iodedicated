@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"github.com/ataboo/iodedicated/game"
 )
 
 type WsHost struct {
@@ -40,26 +41,16 @@ func (host *WsHost) Stop() {
 func (host *WsHost) handleWs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Tadaa!")
 
-	c, err := host.Upgrader.Upgrade(w, r, nil)
+	conn, err := host.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("Upgrade err: ", err)
 		return
 	}
 
-	fmt.Println(c)
+	userName := r.URL.Query().Get("username")
 
-	defer c.Close()
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			log.Println("read err:", err)
-			break
-		}
-		log.Printf("received: %s", message)
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			log.Println("write err: ", err)
-			break
-		}
-	}
+	fmt.Println("Username: "+userName+" connected.")
+
+	player := game.GetInstance().Roster.FindOrNew(userName)
+	player.SetUser(*NewUser(conn, player))
 }
